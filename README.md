@@ -1,141 +1,152 @@
 # TecnologiasAutomatizacion-FRBA
 
-Repositorio para presentar el trabajo práctico final de Tecnologías para la automatización.
+Trabajo práctico final de Tecnologías para la automatización.
 Autor: Andrea Fabiana Lassaga
 Legajo: 68989/1
 
-## Descripción
+## ¿Qué hace esta app?
 
-Esta aplicación es una simulación de un controlador PID para el control de contaminación con gluten en un alimento sin TACC, construida con Streamlit, NumPy, Pandas y Plotly.
+Simula un controlador PID para controlar la contaminación con gluten en un alimento sin TACC.
+La aplicación usa Streamlit para mostrar gráficos de respuesta, error, componentes PID y señal de control.
 
-## Requisitos previos
+## Requisitos
 
-- Windows, macOS o Linux
-- Python 3.9+ instalado
+- Python 3.8 o superior
 - Conexión a internet para instalar dependencias
 
-## Instalación
+## Pasos para ejecutar el programa
 
-1. Abre un terminal en la carpeta del proyecto:
+Si vas a trabajar desde el repositorio remoto, clónalo primero:
+
+```powershell
+git clone https://github.com/alassaga/TecnologiasAutomatizacion-FRBA.git
+cd TecnologiasAutomatizacion-FRBA
+```
+
+Si ya tienes la carpeta local, abre una terminal directamente en ella.
+
+1. Abre una terminal en la carpeta del proyecto:
 
 ```powershell
 cd d:\TeoriaControl\TecnologiasAutomatizacion-FRBA
 ```
 
-2. Crea un entorno virtual recomendado:
+2. Crea un entorno virtual:
 
 ```powershell
-py -m venv venv
+py -3 -m venv .venv
 ```
 
 3. Activa el entorno virtual:
 
-- En Windows:
-
 ```powershell
-venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 ```
 
-- En macOS / Linux:
+Si PowerShell bloquea la activación, ejecuta una vez:
 
-```bash
-source venv/bin/activate
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
 ```
 
 4. Instala las dependencias:
 
 ```powershell
-py -m pip install --upgrade pip
-py -m pip install -r requirements.txt
+python -m pip install --upgrade pip
+pip install -r requirements.txt
 ```
 
-## Ejecutar la aplicación
-
-Desde la carpeta del proyecto con el entorno virtual activado, ejecuta:
+5. Ejecuta la aplicación:
 
 ```powershell
 py -m streamlit run app.py
 ```
 
-Luego abre la URL que muestra Streamlit en el navegador, normalmente:
+6. Abre en el navegador la dirección que muestra Streamlit, normalmente:
 
 - `http://localhost:8501`
 
-## Uso en Streamlit
+## Instrucciones rápidas para cualquier usuario
 
-1. Ajusta los parámetros del controlador en la barra lateral:
-   - `Kp`, `Ki`, `Kd` para el PID.
-   - `Carga inicial`, `Referencia`, `Límite ANMAT`.
-   - `Perturbación`, `Inicio` y `Duración`.
-   - `Tiempo de escaneo`, `Ruido` y `Eficiencia de limpieza`.
-2. Activa o desactiva `Mostrar simulación progresiva` para ver el avance en tiempo real.
-3. Observa los gráficos generados:
-   - Respuesta del sistema.
-   - Error `e(t)`.
-   - Componentes `P(t)`, `I(t)` y `D(t)`.
-   - Señal de control `u(t)`.
-4. Revisa los resultados finales en la sección de métricas y el análisis de estabilidad.
+Si solo quieres ejecutar el programa, sigue estos pasos:
+
+- Clona el repositorio o copia la carpeta local.
+- Abre una terminal dentro de `TecnologiasAutomatizacion-FRBA`.
+- Crea y activa un entorno virtual.
+- Instala dependencias con `pip install -r requirements.txt`.
+- Ejecuta `py -m streamlit run app.py`.
+- Abre `http://localhost:8501`.
+
+## Qué ajustar en la app
+
+En la barra lateral de Streamlit puedes modificar:
+
+- `Kp`, `Ki`, `Kd`
+- `Carga inicial`
+- `Referencia`
+- `Límite ANMAT`
+- `Perturbación`, `Inicio`, `Duración`
+- `Tiempo de escaneo`
+- `Ruido`
+- `Eficiencia de limpieza`
+- `Mostrar simulación progresiva`
 
 ## Solución de problemas
 
-- Si `streamlit` no está instalado, instala las dependencias con:
-
-```powershell
-py -m pip install -r requirements.txt
-```
-
-- Si el comando `py` no funciona, prueba con `python`:
+- Si el comando `py` no funciona, usa `python`:
 
 ```powershell
 python -m streamlit run app.py
 ```
 
-- Si se produce un error de sintaxis, ejecuta:
+- Si `streamlit` no está instalado:
+
+```powershell
+pip install -r requirements.txt
+```
+
+- Si el puerto `8501` está ocupado, prueba otro puerto:
+
+```powershell
+py -m streamlit run app.py --server.port 8502
+```
+
+- Si hay error de sintaxis:
 
 ```powershell
 py -m py_compile app.py
 ```
 
-- Si la aplicación no se muestra en el navegador, revisa que no haya otro proceso usando el puerto `8501`.
-- Si el terminal queda bloqueado, cierra el terminal y abre uno nuevo en la carpeta del proyecto.
-- Si ves errores de importación, asegúrate de activar el entorno virtual antes de ejecutar Streamlit.
-
-## Validar sintaxis
-
-Antes de ejecutar, puedes verificar que no haya errores de sintaxis con:
+- Si no puedes activar el entorno en PowerShell:
 
 ```powershell
-py -m py_compile app.py
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\.venv\Scripts\Activate.ps1
 ```
 
-## Archivos principales
+## Archivos importantes
 
 - `app.py`: aplicación principal de Streamlit.
-- `requirements.txt`: dependencias necesarias.
-- `README.md`: instrucciones de uso.
+- `requirements.txt`: lista de dependencias.
+- `README.md`: instrucciones y guía de uso.
 
-## Publicar en GitHub
+## Git básico (opcional)
 
-Si tu repositorio local ya está inicializado y tiene remoto configurado, usa:
+Para guardar cambios si trabajas con Git:
 
-```bash
+```powershell
 git status
 git add README.md app.py requirements.txt
 git commit -m "Actualizar README e instrucciones de ejecución"
 git push
 ```
 
-Si necesitas configurar el remoto por primera vez, usa:
+Si todavía no configuraste el remoto:
 
-```bash
+```powershell
 git branch -M main
 git remote add origin https://github.com/alassaga/TecnologiasAutomatizacion-FRBA.git
 git push -u origin main
 ```
-
-## Notas
-
-- Si Streamlit abre la aplicación en el navegador automáticamente, mantén el terminal abierto.
-- Si recibes errores de módulo, revisa que el entorno virtual esté activo y que las dependencias estén instaladas.
-- Para cualquier cambio posterior, repite `git add`, `git commit` y `git push`.
 
