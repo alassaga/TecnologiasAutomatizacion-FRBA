@@ -33,8 +33,8 @@ st.markdown(
 Este tablero permite simular un sistema de control en lazo cerrado aplicado
  a la detección y prevención de contaminación con gluten en un alimento sin TACC.
 
-El modelo permite modificar en pantalla la carga inicial, la perturbación,
- el tiempo de escaneo del sensor y los parámetros del controlador PID.
+El modelo permite modificar en pantalla el gluten inicial, la carga del proceso,
+la perturbación, el tiempo de escaneo del sensor y los parámetros del controlador PID.
 """
 )
 
@@ -161,7 +161,8 @@ def analizar_estabilidad(
 
 def simular_sistema(
     alimento,
-    carga_inicial,
+    gluten_inicial,
+    carga_proceso,
     referencia,
     limite_anmat,
     kp,
@@ -177,19 +178,20 @@ def simular_sistema(
     ruido_sensor,
     accion_max,
     integral_max,
+    factor_complejidad,
 ):
     """
     Simula el sistema PID completo.
     """
 
-    y_real = carga_inicial
+    y_real = gluten_inicial
     y_medido = y_real
     integral = 0.0
     error_anterior = 0.0
     ultimo_escaneo = -tiempo_scanner
 
-    factor_carga = 1 + (carga_inicial / 100)
-    eficiencia_limpieza = eficiencia_base / factor_carga
+    factor_carga = 1 + (carga_proceso / 100)
+    eficiencia_limpieza = eficiencia_base / (factor_carga * factor_complejidad)
 
     datos = []
     tiempos = np.arange(0, tiempo_total + dt, dt)
@@ -235,7 +237,7 @@ def simular_sistema(
             "t": t,
             "alimento": alimento,
             "r(t)": referencia,
-            "L(t)": carga_inicial,
+            "L(t)": carga_proceso,
             "y(t)": y_real,
             "ym(t)": y_medido,
             "e(t)": error,
@@ -244,6 +246,7 @@ def simular_sistema(
             "D(t)": d,
             "u(t)": u,
             "d(t)": d_t,
+            "factor_complejidad": factor_complejidad,
             "scanner": "MIDE" if escaneo_activo else "ESPERA",
             "estado": estado,
             "saturado": saturado,
@@ -257,7 +260,7 @@ def simular_sistema(
 
 def graficar_respuesta(df, limite_anmat):
     """
-    Gráfico de salida, medición, referencia y perturbación.
+    Gráfico de salida, medición, referencia, perturbación y carga.
     """
     fig = go.Figure()
 
@@ -266,12 +269,14 @@ def graficar_respuesta(df, limite_anmat):
         y=df["y(t)"],
         name="y(t) - Gluten real",
         mode="lines",
+        yaxis="y1",
     ))
     fig.add_trace(go.Scatter(
         x=df["t"],
         y=df["ym(t)"],
         name="ym(t) - Gluten medido",
         mode="lines",
+        yaxis="y1",
     ))
     fig.add_trace(go.Scatter(
         x=df["t"],
@@ -279,6 +284,7 @@ def graficar_respuesta(df, limite_anmat):
         name="r(t) - Referencia",
         mode="lines",
         line=dict(dash="dash"),
+        yaxis="y1",
     ))
     fig.add_trace(go.Scatter(
         x=df["t"],
@@ -286,6 +292,15 @@ def graficar_respuesta(df, limite_anmat):
         name="d(t) - Perturbación",
         mode="lines",
         line=dict(dash="dot"),
+        yaxis="y1",
+    ))
+    fig.add_trace(go.Scatter(
+        x=df["t"],
+        y=df["L(t)"],
+        name="L(t) - Carga proceso %",
+        mode="lines",
+        line=dict(dash="dashdot"),
+        yaxis="y2",
     ))
 
     fig.add_hline(
@@ -293,12 +308,19 @@ def graficar_respuesta(df, limite_anmat):
         line_dash="dash",
         line_color="red",
         annotation_text="Límite ANMAT 10 ppm",
+        yref="y1",
     )
 
     fig.update_layout(
-        title="Respuesta del sistema ante carga y perturbación",
+        title="Respuesta del sistema ante carga del proceso y perturbación",
         xaxis_title="Tiempo [s]",
-        yaxis_title="ppm",
+        yaxis=dict(title="ppm", side="left"),
+        yaxis2=dict(
+            title="Carga L(t) [%]",
+            overlaying="y",
+            side="right",
+            showgrid=False,
+        ),
         legend_title="Señales",
         height=430,
     )
@@ -404,6 +426,13 @@ alimento = st.sidebar.selectbox(
     ],
 )
 
+factores_complejidad = {
+    "Panificado sin TACC": 1.0,
+    "Galletita sin TACC": 1.2,
+    "Pasta sin TACC": 1.3,
+    "Preparación hospitalaria sin TACC": 1.5,
+}
+
 referencia = st.sidebar.number_input(
     "Referencia r(t) [ppm]",
     min_value=0.0,
@@ -420,11 +449,19 @@ limite_anmat = st.sidebar.number_input(
     step=1.0,
 )
 
-carga_inicial = st.sidebar.slider(
-    "Carga inicial L(t) [ppm]",
+gluten_inicial = st.sidebar.slider(
+    "Gluten inicial y(0) [ppm]",
+    min_value=0.0,
+    max_value=10.0,
+    value=3.0,
+    step=0.1,
+)
+
+carga_proceso = st.sidebar.slider(
+    "Carga del proceso L(t) [% complejidad]",
     min_value=0.0,
     max_value=100.0,
-    value=25.0,
+    value=50.0,
     step=1.0,
 )
 
@@ -576,7 +613,8 @@ velocidad_reproduccion = st.sidebar.slider(
 
 df = simular_sistema(
     alimento=alimento,
-    carga_inicial=carga_inicial,
+    gluten_inicial=gluten_inicial,
+    carga_proceso=carga_proceso,
     referencia=referencia,
     limite_anmat=limite_anmat,
     kp=kp,
@@ -592,6 +630,7 @@ df = simular_sistema(
     ruido_sensor=ruido_sensor,
     accion_max=accion_max,
     integral_max=integral_max,
+    factor_complejidad=factores_complejidad[alimento],
 )
 
 fin_perturbacion = inicio_perturbacion + duracion_perturbacion
@@ -630,14 +669,16 @@ with col1:
     st.metric("Referencia r(t)", f"{referencia:.2f} ppm")
 
 with col2:
-    st.metric("Carga L(t)", f"{carga_inicial:.2f} ppm")
-    st.metric("Límite ANMAT", f"{limite_anmat:.2f} ppm")
+    st.metric("Gluten inicial y(0)", f"{gluten_inicial:.2f} ppm")
+    st.metric("Carga de proceso L(t)", f"{carga_proceso:.2f} %")
 
 with col3:
-    st.metric("Kp", f"{kp:.2f}")
-    st.metric("Ki", f"{ki:.2f}")
+    st.metric("Límite ANMAT", f"{limite_anmat:.2f} ppm")
+    st.metric("Factor de complejidad", f"{factores_complejidad[alimento]:.2f}")
 
 with col4:
+    st.metric("Kp", f"{kp:.2f}")
+    st.metric("Ki", f"{ki:.2f}")
     st.metric("Kd", f"{kd:.2f}")
     st.metric("Scanner", f"{tiempo_scanner:.1f} s")
 

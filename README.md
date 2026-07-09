@@ -1,4 +1,4 @@
-# TecnologiasAutomatizacion-FRBA
+﻿# TecnologiasAutomatizacion-FRBA
 
 Trabajo práctico final de Tecnologías para la automatización.
 Autor: Andrea Fabiana Lassaga
@@ -7,7 +7,15 @@ Legajo: 68989/1
 ## ¿Qué hace esta app?
 
 Simula un controlador PID para controlar la contaminación con gluten en un alimento sin TACC.
-La aplicación usa Streamlit para mostrar gráficos de respuesta, error, componentes PID y señal de control.
+
+El modelo distingue dos variables clave:
+
+- `gluten_inicial` o `y(0)` [ppm], que representa la cantidad real de gluten al inicio y está limitado entre 0 y 10 ppm.
+- `carga_proceso` o `L(t)` [%], que representa la complejidad del proceso y la dificultad de limpieza.
+
+El alimento seleccionado aplica un factor de complejidad adicional que reduce la eficiencia de limpieza. La perturbación `d(t)` representa contaminación cruzada y puede hacer que el gluten supere 10 ppm.
+
+La aplicación usa Streamlit para mostrar gráficos de respuesta, error, componentes PID y señales de control.
 
 ## Requisitos
 
@@ -71,26 +79,51 @@ py -m streamlit run app.py
 
 Si solo quieres ejecutar el programa, sigue estos pasos:
 
-- Clona el repositorio o copia la carpeta local.
+- Clona el repositorio o usa la carpeta local.
 - Abre una terminal dentro de `TecnologiasAutomatizacion-FRBA`.
 - Crea y activa un entorno virtual.
 - Instala dependencias con `pip install -r requirements.txt`.
 - Ejecuta `py -m streamlit run app.py`.
 - Abre `http://localhost:8501`.
 
+## Modelo de simulación
+
+- `gluten_inicial` (`y(0)`): gluten real en ppm al inicio.
+- `carga_proceso` (`L(t)`): carga del proceso en porcentaje.
+- `eficiencia_base`: eficiencia de limpieza base del actuador.
+- `factor_complejidad`: depende del alimento y reduce la eficiencia de limpieza.
+- `d(t)`: perturbación de contaminación cruzada que puede elevar el gluten.
+
 ## Qué ajustar en la app
 
 En la barra lateral de Streamlit puedes modificar:
 
 - `Kp`, `Ki`, `Kd`
-- `Carga inicial`
+- `Gluten inicial y(0)`
+- `Carga del proceso L(t) [%]`
 - `Referencia`
 - `Límite ANMAT`
 - `Perturbación`, `Inicio`, `Duración`
 - `Tiempo de escaneo`
 - `Ruido`
-- `Eficiencia de limpieza`
+- `Eficiencia base de limpieza`
+- `Saturación máxima del actuador`
+- `Límite de acumulación integral`
 - `Mostrar simulación progresiva`
+
+## Qué muestran los resultados
+
+- `r(t)`: referencia deseada de gluten en ppm.
+- `y(t)`: gluten real en ppm.
+- `ym(t)`: gluten medido por el sensor en ppm.
+- `e(t)`: error de control (`ym(t) - r(t)`).
+- `P(t)`, `I(t)`, `D(t)`: componentes del controlador PID.
+- `u(t)`: acción de control aplicada.
+- `d(t)`: perturbación de contaminación cruzada.
+- `L(t)`: carga del proceso en %.
+- `estado`: clasificación operacional según el límite ANMAT.
+- `saturado`: indica si el actuador alcanzó su máximo.
+- `calidad del servicio`: evaluación de recuperación y estabilidad.
 
 ## Solución de problemas
 
@@ -149,4 +182,3 @@ git branch -M main
 git remote add origin https://github.com/alassaga/TecnologiasAutomatizacion-FRBA.git
 git push -u origin main
 ```
-
