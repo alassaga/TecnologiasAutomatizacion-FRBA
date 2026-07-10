@@ -266,7 +266,7 @@ def simular_sistema(
         d = kd * derivada
         u_raw = p + i + d
 
-        saturado = u_raw > accion_max
+        saturado = u_raw > accion_max or u_raw < 0.0
         u = np.clip(u_raw, 0.0, accion_max)
 
         reduccion = eficiencia_limpieza * u * dt
@@ -847,11 +847,11 @@ if st.session_state["sim_started"]:
 
     with col5:
         st.metric("Señal medida final f(t)", f"{gluten_final:.2f} ppm")
-        st.metric("u_raw máximo", f"{u_raw_max:.2f}")
+        st.metric("Acción PID máxima calculada", f"{u_raw_max:.2f}")
 
     with col6:
         st.metric("Error final e(t)", f"{error_final:.2f} ppm")
-        st.metric("u máximo", f"{u_max:.2f}")
+        st.metric("Acción máxima aplicada", f"{u_max:.2f}")
 
     with col7:
         st.metric("Acción final u(t)", f"{accion_final:.2f}")
