@@ -84,19 +84,19 @@ def calcular_calidad_servicio(
     """
     Evalúa la calidad del servicio del sistema.
     """
-    # Si no recupera o termina por encima del límite -> FALLA
-    if not recupera:
-        return "FALLA"
-
     if gluten_final is None:
         return "FALLA"
 
     if gluten_final > limite_anmat:
         return "FALLA"
 
-    # Si no hay tiempo de recuperación válido -> FALLA
+    # Si no recupera pero termina dentro del límite, es degradada en lugar de falla.
+    if not recupera:
+        return "DEGRADADA"
+
+    # Si no hay tiempo de recuperación válido -> DEGRADADA
     if tiempo_recuperacion is None:
-        return "FALLA"
+        return "DEGRADADA"
 
     # Si no es estable -> DEGRADADA
     if not estable:
@@ -107,7 +107,7 @@ def calcular_calidad_servicio(
         return "DEGRADADA"
 
     # Si termina con saturación persistente -> DEGRADADA
-    if saturado_final:
+    if hubo_saturacion or saturado_final:
         return "DEGRADADA"
 
     # Si pasa todas las condiciones -> ADECUADA
@@ -120,19 +120,52 @@ def analizar_estabilidad(
     fin_perturbacion,
     tiempo_maximo_recuperacion,
     ventana_estabilidad,
+    amplitud_perturbacion,
 ):
     """
     Analiza si el sistema recupera condición segura luego de la perturbación.
     """
     df_post = df[df["t"] >= fin_perturbacion].copy()
 
+    ultimos = df.tail(ventana_estabilidad)
+    if len(ultimos) < ventana_estabilidad:
+        variacion_final = None
+        estable = False
+    else:
+        variacion_final = ultimos["f(t)"].max() - ultimos["f(t)"].min()
+        estable = (
+            ultimos["f(t)"].max() <= limite_anmat
+            and ultimos["f(t)"].iloc[-1] <= limite_anmat
+        )
+
     if df_post.empty:
+        final_ok = df["f(t)"].iloc[-1] <= limite_anmat
+        mensaje = (
+            "No hay datos posteriores a la perturbación y el sistema finaliza dentro del límite."
+            if final_ok
+            else "No hay datos posteriores a la perturbación y el sistema finaliza fuera del límite."
+        )
         return {
-            "recupera": False,
-            "tiempo_recuperacion": None,
-            "estable": False,
-            "variacion_final": None,
-            "mensaje": "No hay datos posteriores a la perturbación.",
+            "recupera": final_ok,
+            "tiempo_recuperacion": 0 if final_ok else None,
+            "estable": estable,
+            "variacion_final": variacion_final,
+            "mensaje": mensaje,
+        }
+
+    if amplitud_perturbacion == 0:
+        final_ok = df["f(t)"].iloc[-1] <= limite_anmat
+        mensaje = (
+            "Sin perturbación real: el sistema finaliza dentro del límite."
+            if final_ok
+            else "Sin perturbación real, pero el sistema finaliza fuera del límite."
+        )
+        return {
+            "recupera": final_ok,
+            "tiempo_recuperacion": 0 if final_ok else None,
+            "estable": estable,
+            "variacion_final": variacion_final,
+            "mensaje": mensaje,
         }
 
     # Recuperación basada en la medición del scanner (f(t) / ym)
@@ -150,19 +183,6 @@ def analizar_estabilidad(
     primer_tiempo_recuperado = recuperados["t"].iloc[0]
     tiempo_recuperacion = primer_tiempo_recuperado - fin_perturbacion
 
-    # Evaluar la ventana final sobre la medición ym (f(t))
-    ultimos = df.tail(ventana_estabilidad)
-
-    if len(ultimos) < ventana_estabilidad:
-        variacion_final = None
-        estable = False
-    else:
-        variacion_final = ultimos["f(t)"].max() - ultimos["f(t)"].min()
-        # Estable si la medición final y toda la ventana están por debajo del límite
-        estable = (
-            ultimos["f(t)"].max() <= limite_anmat
-            and ultimos["f(t)"].iloc[-1] <= limite_anmat
-        )
 
     if estable and tiempo_recuperacion <= tiempo_maximo_recuperacion:
         mensaje = "El sistema es estable: recupera condición segura y permanece controlado."
@@ -491,8 +511,8 @@ def restart_simulation():
 alimento = st.sidebar.selectbox(
     "Alimento seleccionado",
     [
-        "Panificado sin TACC",
         "Galletita sin TACC",
+        "Panificado sin TACC",
         "Pasta sin TACC",
         "Preparación hospitalaria sin TACC",
     ],
@@ -500,8 +520,8 @@ alimento = st.sidebar.selectbox(
 )
 
 factores_complejidad = {
-    "Panificado sin TACC": 1.0,
-    "Galletita sin TACC": 1.2,
+    "Galletita sin TACC": 1.0,
+    "Panificado sin TACC": 1.2,
     "Pasta sin TACC": 1.3,
     "Preparación hospitalaria sin TACC": 1.5,
 }
@@ -756,6 +776,7 @@ if st.session_state["sim_started"]:
         fin_perturbacion=fin_perturbacion,
         tiempo_maximo_recuperacion=tiempo_maximo_recuperacion,
         ventana_estabilidad=ventana_estabilidad,
+        amplitud_perturbacion=amplitud_perturbacion,
     )
 
     hubo_saturacion = bool(df["saturado"].any())
@@ -1003,7 +1024,7 @@ st.markdown(
 - La referencia del sistema es **θi(t) = {referencia:.2f} ppm**.
 - El valor inicial de salida es **θo(0) = {gluten_inicial:.2f} ppm**.
 - El límite operativo para considerar apto el alimento es **{limite_anmat:.2f} ppm**.
-- La carga del proceso **L(t)** representa la complejidad o dificultad de limpieza del alimento.
+- La carga del proceso **L(t)** representa la complejidad operativa del proceso analizado.
 - La perturbación **d(t)** representa contaminación cruzada durante un intervalo de tiempo.
 - El scanner mide cada **{tiempo_scanner} segundos**.
 - Si la perturbación dura más que el tiempo de escaneo, el sistema debería detectarla.
