@@ -33,8 +33,8 @@ st.markdown(
 Este tablero permite simular un sistema de control en lazo cerrado aplicado
  a la detección y prevención de contaminación con gluten en un alimento sin TACC.
 
-El modelo permite modificar en pantalla el gluten inicial, la carga del proceso,
-la perturbación, el tiempo de escaneo del sensor y los parámetros del controlador PID.
+El modelo permite modificar en pantalla el valor inicial θo(0), la carga del proceso L(t),
+la perturbación d(t), el tiempo de escaneo del sensor y los parámetros del controlador PID.
 """
 )
 
@@ -263,9 +263,9 @@ def simular_sistema(
         datos.append({
             "t": t,
             "alimento": alimento,
-            "Oi(t)": referencia,
-            "L(t)": carga_proceso,
-            "Oo(t)": y_real,
+            "θi(t)": referencia,
+            "L(t) [%]": carga_proceso,
+            "θo(t)": y_real,
             "f(t)": y_medido,
             "e(t)": error,
             "P(t)": p,
@@ -274,6 +274,7 @@ def simular_sistema(
             "u(t)": u,
             "u_raw": u_raw,
             "d(t)": d_t,
+            "θo(0) [ppm]": gluten_inicial,
             "factor_complejidad": factor_complejidad,
             "scanner": "MIDE" if escaneo_activo else "ESPERA",
             "estado": estado,
@@ -294,8 +295,8 @@ def graficar_respuesta(df, limite_anmat):
 
     fig.add_trace(go.Scatter(
         x=df["t"],
-        y=df["Oo(t)"],
-        name="Oo(t) - Gluten real",
+        y=df["θo(t)"],
+        name="θo(t) - Gluten real",
         mode="lines",
         yaxis="y1",
     ))
@@ -308,8 +309,8 @@ def graficar_respuesta(df, limite_anmat):
     ))
     fig.add_trace(go.Scatter(
         x=df["t"],
-        y=df["Oi(t)"],
-        name="Oi(t) - Referencia",
+        y=df["θi(t)"],
+        name="θi(t) - Referencia",
         mode="lines",
         line=dict(dash="dash"),
         yaxis="y1",
@@ -324,8 +325,8 @@ def graficar_respuesta(df, limite_anmat):
     ))
     fig.add_trace(go.Scatter(
         x=df["t"],
-        y=df["L(t)"],
-        name="L(t) - Carga proceso %",
+        y=df["L(t) [%]"],
+        name="L(t) [%] - Carga proceso",
         mode="lines",
         line=dict(dash="dashdot"),
         yaxis="y2",
@@ -448,8 +449,8 @@ input_defaults = {
     "alimento": "Panificado sin TACC",
     "referencia": 0.0,
     "limite_anmat": 10.0,
-    "gluten_inicial": 0.0,
-    "carga_proceso": 10.0,
+    "gluten_inicial": 3.0,
+    "carga_proceso": 50.0,
     "kp": 0.80,
     "ki": 0.05,
     "kd": 0.20,
@@ -506,7 +507,7 @@ factores_complejidad = {
 }
 
 referencia = st.sidebar.number_input(
-    "Referencia Oi(t) [ppm]",
+    "Referencia θi(t) [ppm]",
     min_value=0.0,
     max_value=20.0,
     step=0.5,
@@ -522,7 +523,7 @@ limite_anmat = st.sidebar.number_input(
 )
 
 gluten_inicial = st.sidebar.slider(
-    "Gluten inicial y(0) [ppm]",
+    "θo(0) [ppm]",
     min_value=0.0,
     max_value=10.0,
     step=0.1,
@@ -530,7 +531,7 @@ gluten_inicial = st.sidebar.slider(
 )
 
 carga_proceso = st.sidebar.slider(
-    "Carga del proceso L(t) [% complejidad]",
+    "Carga del proceso L(t) [% de complejidad]",
     min_value=0.0,
     max_value=100.0,
     step=1.0,
@@ -798,11 +799,11 @@ if st.session_state["sim_started"]:
 
     with col1:
         st.metric("Alimento", alimento)
-        st.metric("Referencia Oi(t)", f"{referencia:.2f} ppm")
+        st.metric("Referencia θi(t)", f"{referencia:.2f} ppm")
 
     with col2:
-        st.metric("Gluten inicial y(0)", f"{gluten_inicial:.2f} ppm")
-        st.metric("Carga de proceso L(t)", f"{carga_proceso:.2f} %")
+        st.metric("θo(0) inicial [ppm]", f"{gluten_inicial:.2f} ppm")
+        st.metric("Carga L(t) [%]", f"{carga_proceso:.2f} %")
 
     with col3:
         st.metric("Límite ANMAT", f"{limite_anmat:.2f} ppm")
@@ -824,7 +825,7 @@ if st.session_state["sim_started"]:
     col5, col6, col7, col8 = st.columns(4)
 
     with col5:
-        st.metric("Gluten medido final f(t)", f"{gluten_final:.2f} ppm")
+        st.metric("Señal medida final f(t)", f"{gluten_final:.2f} ppm")
         st.metric("u_raw máximo", f"{u_raw_max:.2f}")
 
     with col6:
@@ -973,8 +974,8 @@ if st.session_state["sim_started"]:
                 st.metric("Muestras mostradas", f"{len(df_animado)} / {len(df)}")
 
             with c2:
-                st.metric("Gluten medido parcial f(t)", f"{fila_parcial['f(t)']:.2f} ppm")
-                st.metric("Gluten real parcial Oo(t)", f"{fila_parcial['Oo(t)']:.2f} ppm")
+                st.metric("f(t) parcial", f"{fila_parcial['f(t)']:.2f} ppm")
+                st.metric("θo(t) real parcial", f"{fila_parcial['θo(t)']:.2f} ppm")
 
             with c3:
                 st.metric("Error parcial e(t)", f"{fila_parcial['e(t)']:.2f} ppm")
@@ -999,7 +1000,8 @@ st.subheader("Interpretación del modelo")
 
 st.markdown(
     f"""
-- La referencia del sistema es **Oi(t) = {referencia:.2f} ppm**.
+- La referencia del sistema es **θi(t) = {referencia:.2f} ppm**.
+- El valor inicial de salida es **θo(0) = {gluten_inicial:.2f} ppm**.
 - El límite operativo para considerar apto el alimento es **{limite_anmat:.2f} ppm**.
 - La carga del proceso **L(t)** representa la complejidad o dificultad de limpieza del alimento.
 - La perturbación **d(t)** representa contaminación cruzada durante un intervalo de tiempo.

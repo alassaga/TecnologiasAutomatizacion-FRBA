@@ -10,10 +10,10 @@ Simula un controlador PID para controlar la contaminación con gluten en un alim
 
 El modelo distingue dos variables clave:
 
-- `gluten_inicial` o `y(0)` [ppm], que representa la cantidad real de gluten al inicio y está limitado entre 0 y 10 ppm.
+- `gluten_inicial` o `θo(0)` [ppm], que representa la cantidad real de gluten de salida al inicio y está limitado entre 0 y 10 ppm.
 - `carga_proceso` o `L(t)` [%], que representa la complejidad del proceso y la dificultad de limpieza.
 
-El alimento seleccionado aplica un factor de complejidad adicional que reduce la eficiencia de limpieza. La perturbación `d(t)` representa contaminación cruzada y puede hacer que el gluten supere 10 ppm.
+El alimento seleccionado aplica un factor de complejidad adicional que reduce la eficiencia de limpieza. La perturbación `d(t)` representa contaminación cruzada y puede hacer que la medida de gluten supere el límite establecido.
 
 La aplicación usa Streamlit para mostrar gráficos de respuesta, error, componentes PID y señales de control.
 
@@ -75,6 +75,9 @@ py -m streamlit run app.py
 
 - `http://localhost:8501`
 
+7. Ajusta los parámetros en la barra lateral y presiona el botón `Iniciar simulación` para ejecutar el modelo.
+   - Si activas `Mostrar simulación progresiva`, podrás usar `Detener simulación` y `Reanudar simulación`.
+
 ## Instrucciones rápidas para cualquier usuario
 
 Si solo quieres ejecutar el programa, sigue estos pasos:
@@ -88,7 +91,7 @@ Si solo quieres ejecutar el programa, sigue estos pasos:
 
 ## Modelo de simulación
 
-- `gluten_inicial` (`y(0)`): gluten real en ppm al inicio.
+- `gluten_inicial` (`θo(0)`): gluten real de salida en ppm al inicio.
 - `carga_proceso` (`L(t)`): carga del proceso en porcentaje.
 - `eficiencia_base`: eficiencia de limpieza base del actuador.
 - `factor_complejidad`: depende del alimento y reduce la eficiencia de limpieza.
@@ -99,9 +102,9 @@ Si solo quieres ejecutar el programa, sigue estos pasos:
 En la barra lateral de Streamlit puedes modificar:
 
 - `Kp`, `Ki`, `Kd`
-- `Gluten inicial y(0)`
+- `θo(0)` inicial
 - `Carga del proceso L(t) [%]`
-- `Referencia`
+- `θi(t)` referencia
 - `Límite ANMAT`
 - `Perturbación`, `Inicio`, `Duración`
 - `Tiempo de escaneo`
@@ -113,10 +116,10 @@ En la barra lateral de Streamlit puedes modificar:
 
 ## Qué muestran los resultados
 
-- `r(t)`: referencia deseada de gluten en ppm.
-- `y(t)`: gluten real en ppm.
-- `ym(t)`: gluten medido por el sensor en ppm.
-- `e(t)`: error de control (`ym(t) - r(t)`).
+- `θi(t)`: referencia deseada de gluten en ppm.
+- `θo(t)`: gluten real de salida en ppm.
+- `f(t)`: gluten medido por el sensor en ppm.
+- `e(t)`: error de control (`f(t) - θi(t)`).
 - `P(t)`, `I(t)`, `D(t)`: componentes del controlador PID.
 - `u(t)`: acción de control aplicada.
 - `d(t)`: perturbación de contaminación cruzada.
