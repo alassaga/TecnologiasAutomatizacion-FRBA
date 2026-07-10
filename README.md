@@ -125,6 +125,12 @@ En la barra lateral de Streamlit puedes modificar:
 - `saturado`: indica si el actuador alcanzó su máximo.
 - `calidad del servicio`: evaluación de recuperación y estabilidad.
 
+## Definición de calidad del servicio
+
+- **ADECUADA**: el sistema recupera condición segura dentro del tiempo esperado y es estable en la ventana final.
+- **DEGRADADA**: el sistema recupera condición segura después del tiempo esperado o presenta inestabilidad en la ventana final.
+- **FALLA**: el sistema no recupera condición segura dentro del tiempo simulado.
+
 ## Solución de problemas
 
 - Si el comando `py` no funciona, usa `python`:
